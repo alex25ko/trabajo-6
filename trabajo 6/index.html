@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Mini lista de tareas</title>
+    <style>
+      /* Estilos básicos para evitar pantalla en blanco */
+      html,body{height:100%;margin:0}
+      body{display:flex;align-items:center;justify-content:center;background:#f7f9fb;font-family:Arial,Helvetica,sans-serif;color:#333}
+      #app{width:100%;max-width:760px;padding:1.5rem;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(20,30,50,0.06)}
+      h1{color:#42b883;margin:0 0 1rem 0}
+      .new{display:flex;gap:0.5rem;margin-bottom:1rem}
+      .new input{flex:1;padding:0.5rem;border:1px solid #ccc;border-radius:4px}
+      .new button{padding:0.5rem 0.8rem;background:#42b883;color:#fff;border:none;border-radius:4px;cursor:pointer}
+      ul{list-style:none;padding:0;margin:0}
+      li{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid #eee}
+      li.done span{text-decoration:line-through;color:#999}
+      .del{background:transparent;border:none;color:#c44;cursor:pointer}
+      .meta{margin-top:0.75rem;color:#555;font-size:0.9rem}
+      .note{font-size:0.85rem;color:#666;margin-top:0.75rem}
+      .noscript-msg{color:#c44;font-weight:600}
+    </style>
+  </head>
+  <body>
+    <div id="app" role="application" aria-live="polite">
+      <!-- Fallback interactivo en JS puro (será reemplazado por Vue si se monta correctamente) -->
+      <h1>Mini lista de tareas</h1>
+
+      <div class="new" id="fallback-new">
+        <input id="fallback-input" placeholder="Añade una tarea..." />
+        <button id="fallback-add">Añadir</button>
+      </div>
+
+      <section id="fallback-list">
+        <ul id="fallback-ul"></ul>
+        <p class="meta" id="fallback-meta">0 pendiente(s) — 0 total</p>
+      </section>
+
+      <p class="note">Esta interfaz es un fallback en JavaScript puro. Si Vue carga correctamente, reemplazará este contenido.</p>
+      <noscript><div class="noscript-msg">JavaScript deshabilitado — habilítalo para usar la aplicación.</div></noscript>
+    </div>
+
+    <script>
+      // Fallback minimo: lista de tareas con localStorage
+      (function(){
+        const KEY = 'mini-todos-fallback'
+        const input = document.getElementById('fallback-input')
+        const addBtn = document.getElementById('fallback-add')
+        const ul = document.getElementById('fallback-ul')
+        const meta = document.getElementById('fallback-meta')
+
+        let todos = []
+        try {
+          const raw = localStorage.getItem(KEY)
+          if (raw) todos = JSON.parse(raw)
+        } catch {}
+
+        function save(){ try{ localStorage.setItem(KEY, JSON.stringify(todos)) }catch{} update() }
+        function update(){
+          ul.innerHTML = ''
+          todos.forEach((t, i) => {
+            const li = document.createElement('li')
+            if (t.done) li.classList.add('done')
+            const label = document.createElement('label')
+            const chk = document.createElement('input')
+            chk.type = 'checkbox'
+            chk.checked = !!t.done
+            chk.addEventListener('change', () => { t.done = chk.checked; save() })
+            const span = document.createElement('span')
+            span.textContent = ' ' + t.text
+            const btn = document.createElement('button')
+            btn.className = 'del'
+            btn.textContent = 'Eliminar'
+            btn.addEventListener('click', () => { todos.splice(i,1); save() })
+            label.appendChild(chk)
+            label.appendChild(span)
+            li.appendChild(label)
+            li.appendChild(btn)
+            ul.appendChild(li)
+          })
+          const remaining = todos.filter(t => !t.done).length
+          meta.textContent = `${remaining} pendiente(s) — ${todos.length} total`
+        }
+
+        function add(){
+          const v = (input.value || '').trim()
+          if (!v) return
+          todos.unshift({ id: Date.now(), text: v, done: false })
+          input.value = ''
+          save()
+        }
+
+        addBtn.addEventListener('click', add)
+        input.addEventListener('keyup', (e) => { if (e.key === 'Enter') add() })
+
+        update()
+      })();
+    </script>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
